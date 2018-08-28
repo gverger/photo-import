@@ -1,5 +1,7 @@
 require 'tty-progressbar'
 require 'exif' # brew install libexif
+require 'time'
+require 'mediainfo'
 
 class Syncer
   attr_reader :in_dir, :out_dir
@@ -28,11 +30,18 @@ class Syncer
     @files ||= files_with_times.keys
   end
 
+  def images
+    @images ||= Dir[File.join(in_dir, '*.{JPEG,JPG,jpg,jpeg}')].map { |file| Image.new(file) }
+  end
+
+  def movies
+    @movies ||= Dir[File.join(in_dir, '*.{MOV,mov}')].map { |file| Movie.new(file) }
+  end
+
   def files_with_times
-    all_files = Dir[File.join(in_dir, '*.*')]
     @files_with_times ||=
-      all_files
-      .map { |file| [file, time_for(Exif::Data.new(File.open(file)))] }
+      (images + movies)
+      .map { |file| [file.file, file.time] }
       .select { |_file, time| time > last_imported_time }
       .to_h
   end
@@ -46,17 +55,68 @@ class Syncer
     File.join(out_dir, time.strftime('%Y'), time.strftime('%Y-%m'))
   end
 
-  def time_for(data)
-    str_time = data.date_time_original || data.date_time
-    Time.strptime(str_time, '%Y:%m:%d %H:%M:%S')
-  end
-
   def import_config
     @import_config ||= ImportConfig.new(in_dir, out_dir)
   end
 
   def last_imported_time
     import_config.last_imported_time
+  end
+end
+
+class Directory
+  attr_reader :dir
+  def initialize(dir)
+    @dir = dir
+  end
+  def files
+    @files ||= files_with_times.keys
+  end
+
+  def images
+    @images ||= Dir[File.join(dir, '*.{JPEG,JPG,jpg,jpeg}')].map { |file| Image.new(file) }
+  end
+
+  def movies
+    @movies ||= Dir[File.join(dir, '*.{MOV,mov}')].map { |file| Movie.new(file) }
+  end
+
+  def files_with_times
+    @files_with_times ||=
+      (images + movies)
+      .map { |file| [file.file, file.time] }
+      .to_h
+  end
+
+  def max_time
+    files_with_times.values.max
+  end
+
+end
+
+class Image
+  attr_reader :file
+  def initialize(file)
+    @file = file
+  end
+
+  def time
+    @time ||= begin
+                data = Exif::Data.new(File.open(file))
+                str_time = data.date_time_original || data.date_time
+                Time.strptime(str_time, '%Y:%m:%d %H:%M:%S')
+              end
+  end
+end
+
+class Movie
+  attr_reader :file
+  def initialize(file)
+    @file = file
+  end
+
+  def time
+    @time ||= MediaInfo.from(file).video.encoded_date
   end
 end
 
@@ -104,7 +164,7 @@ class ImportConfig
   end
 
   def update_import_time(time)
-    config[:time] = time
+    config[:time] = [config[:time], time].max
     save_file
   end
 
@@ -115,7 +175,15 @@ class ImportConfig
   end
 
   def default_config
-    { id: import_id, time: DEFAULT_TIME }
+    { id: import_id, time: last_imported }
+  end
+
+  def last_imported
+    Directory.new(last_out_dir).max_time
+  end
+
+  def last_out_dir
+    Dir["#{out_dir}/*/*"].last
   end
 end
 
