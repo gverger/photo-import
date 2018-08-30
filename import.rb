@@ -35,7 +35,7 @@ class Syncer
   end
 
   def movies
-    @movies ||= Dir[File.join(in_dir, '*.{MOV,mov}')].map { |file| Movie.new(file) }
+    @movies ||= Dir[File.join(in_dir, '*.{MOV,mov,mp4,MP4}')].map { |file| Movie.new(file) }
   end
 
   def files_with_times
@@ -179,11 +179,13 @@ class ImportConfig
   end
 
   def last_imported
+    return DEFAULT_TIME unless last_out_dir
+
     Directory.new(last_out_dir).max_time
   end
 
   def last_out_dir
-    Dir["#{out_dir}/*/*"].last
+    @last_out_dir ||= Dir["#{out_dir}/20*/*"].max
   end
 end
 
