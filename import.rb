@@ -30,20 +30,16 @@ class Syncer
     @files ||= files_with_times.keys
   end
 
-  def images
-    @images ||= Dir[File.join(in_dir, '*.{JPEG,JPG,jpg,jpeg}')].map { |file| Image.new(file) }
-  end
-
-  def movies
-    @movies ||= Dir[File.join(in_dir, '*.{MOV,mov,mp4,MP4}')].map { |file| Movie.new(file) }
-  end
-
   def files_with_times
     @files_with_times ||=
-      (images + movies)
-      .map { |file| [file.file, file.time] }
+      directory
+      .files_with_times
       .select { |_file, time| time > last_imported_time }
       .to_h
+  end
+
+  def directory
+    @directory ||= Directory.new(in_dir)
   end
 
   def max_imported_time
