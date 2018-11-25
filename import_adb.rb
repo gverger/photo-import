@@ -14,12 +14,14 @@ def current_config
 end
 
 def choose_folder
+  completions = folders + ['quit']
+
   Readline.completion_proc = proc do |input|
     completions.select { |name| name.start_with?(input) }
   end
 
   loop do
-    puts "Which folder to download from ? (#{completions.join(', ')})"
+    puts "Which folder to download from ? (quit or one of #{folders.join(', ')})"
     folder = Readline.readline('> ', false).strip
     return folder if completions.include?(folder)
 
@@ -27,29 +29,15 @@ def choose_folder
   end
 end
 
-def previous_destinations
-  @previous_destinations ||= []
-end
-
-def choose_destination
-  Readline.completion_proc = proc do |input|
-    previous_destinations.select { |name| name.start_with?(input) }
-  end
-
-  puts 'Which destination to download to ?'
-  folder = Readline.readline('> ', false).strip
-  previous_destinations << folder
-  previous_destinations.uniq!
-
-  folder
-end
-
-def completions
-  @completions ||= current_config.folders.keys
+def folders
+  @folders ||= current_config.folders.keys
 end
 
 loop do
-  adb = Adb::Storage.new(current_config, folder: choose_folder)
+  folder = choose_folder
+  break if folder == 'quit'
+
+  adb = Adb::Storage.new(current_config, folder: folder)
   downloader = Adb::Download.new(adb)
-  downloader.download_media(choose_destination)
+  downloader.download_media(current_config.folders[folder]['destination'])
 end

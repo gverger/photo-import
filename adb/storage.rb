@@ -6,7 +6,7 @@ module Adb
     attr_reader :config, :device_folder
     def initialize(config, folder:)
       @config = config
-      @device_folder = config.folders[folder]
+      @device_folder = config.folders[folder]['path']
     end
 
     def rm(file)
