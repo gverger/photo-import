@@ -33,6 +33,8 @@ def folders
   @folders ||= current_config.folders.keys
 end
 
+puts "Connected to [#{current_config.name}]"
+
 loop do
   folder = choose_folder
   break if folder == 'quit'
