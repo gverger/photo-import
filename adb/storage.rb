@@ -36,7 +36,7 @@ module Adb
 
     class << self
       def connect(folder: 'camera')
-        device = devices.first
+        device = connected_device_ids.first
         raise 'No connected device found' unless device
 
         new(Adb::Config.for_device_id(device), folder: folder)
