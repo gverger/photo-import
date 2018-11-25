@@ -51,7 +51,7 @@ module Adb
       end
 
       def connected?(device_id)
-        devices.include? device_id
+        connected_device_ids.include? device_id
       end
     end
   end
