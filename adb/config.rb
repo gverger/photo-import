@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Adb
   class Config
     attr_reader :device_id, :name, :human_id, :folders

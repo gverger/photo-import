@@ -1,4 +1,5 @@
 load 'adb/config.rb'
+require 'shellwords'
 
 module Adb
   class Storage
@@ -9,17 +10,15 @@ module Adb
     end
 
     def rm(file)
-      puts "DELETING #{file}"
-      `adb shell rm #{device_folder}/#{file}`
+      `adb shell rm "#{escaped_path(device_folder, file)}"`
     end
 
     def download(file, local_dir)
-      puts "COPYING #{file}"
-      `adb pull "#{device_folder}/#{file}" #{local_dir}/`
+      `adb pull #{escaped_path(device_folder, file)} #{local_dir}/`
     end
 
     def ls
-      @ls ||= `adb shell ls #{device_folder}`.split("\n")
+      @ls ||= `adb shell ls "#{escaped_path(device_folder)}"`.split("\n")
     end
 
     def videos
@@ -34,25 +33,10 @@ module Adb
       ls.reject { |filename| filename.include?('.') }
     end
 
-    class << self
-      def connect(folder: 'camera')
-        device = connected_device_ids.first
-        raise 'No connected device found' unless device
+    private
 
-        new(Adb::Config.for_device_id(device), folder: folder)
-      end
-
-      def connected_device_ids
-        `adb devices`
-          .split("\n")[1..-1]
-          .map { |d| d.split("\t") }
-          .select { |id, state| state == 'device' }
-          .map(&:first)
-      end
-
-      def connected?(device_id)
-        connected_device_ids.include? device_id
-      end
+    def escaped_path(*path)
+      File.join(path).shellescape
     end
   end
 end
