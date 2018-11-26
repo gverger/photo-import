@@ -22,7 +22,13 @@ module Adb
       end
 
       def all
-        YAML.load_file('config/adb.yml')
+        YAML.load_file(config_file)
+      end
+
+      private
+
+      def config_file
+        ENV.fetch('ADB_CONFIG_FILE') { 'config/adb.yml' }
       end
     end
   end
