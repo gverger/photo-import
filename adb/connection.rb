@@ -8,10 +8,6 @@ module Adb
           .select { |_id, state| state == 'device' }
           .map(&:first)
       end
-
-      def connected?(device_id)
-        connected_device_ids.include? device_id
-      end
     end
   end
 end
