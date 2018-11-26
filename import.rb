@@ -74,7 +74,7 @@ class Directory
   end
 
   def movies
-    @movies ||= Dir[File.join(dir, '*.{MOV,mov}')].map { |file| Movie.new(file) }
+    @movies ||= Dir[File.join(dir, '*.{MOV,MP4,mov,mp4}')].map { |file| Movie.new(file) }
   end
 
   def files_with_times
@@ -112,7 +112,9 @@ class Movie
   end
 
   def time
-    @time ||= MediaInfo.from(file).video.encoded_date
+    @time ||=
+      MediaInfo.from(file).video&.encoded_date ||
+      Time.parse(File.basename(file).split('.').first)
   end
 end
 
